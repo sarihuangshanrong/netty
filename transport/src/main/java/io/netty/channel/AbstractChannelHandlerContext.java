@@ -1029,7 +1029,7 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         invokeExceptionCaught(cause);
     }
 
-    private static boolean inExceptionCaught(Throwable cause) {
+    static boolean inExceptionCaught(Throwable cause) {
         do {
             StackTraceElement[] trace = cause.getStackTrace();
             if (trace != null) {
@@ -1204,7 +1204,7 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         return channel().hasAttr(key);
     }
 
-    private static boolean safeExecute(EventExecutor executor, Runnable runnable, ChannelPromise promise, Object msg) {
+    static boolean safeExecute(EventExecutor executor, Runnable runnable, ChannelPromise promise, Object msg) {
         try {
             executor.execute(runnable);
             return true;
@@ -1230,14 +1230,14 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         return StringUtil.simpleClassName(ChannelHandlerContext.class) + '(' + name + ", " + channel() + ')';
     }
 
+    static final boolean ESTIMATE_TASK_SIZE_ON_SUBMIT =
+            SystemPropertyUtil.getBoolean("io.netty.transport.estimateSizeOnSubmit", true);
+
+    // Assuming a 64-bit JVM, 16 bytes object header, 3 reference fields and one int field, plus alignment
+    static final int WRITE_TASK_OVERHEAD =
+            SystemPropertyUtil.getInt("io.netty.transport.writeTaskSizeOverhead", 48);
+
     abstract static class AbstractWriteTask implements Runnable {
-
-        private static final boolean ESTIMATE_TASK_SIZE_ON_SUBMIT =
-                SystemPropertyUtil.getBoolean("io.netty.transport.estimateSizeOnSubmit", true);
-
-        // Assuming a 64-bit JVM, 16 bytes object header, 3 reference fields and one int field, plus alignment
-        private static final int WRITE_TASK_OVERHEAD =
-                SystemPropertyUtil.getInt("io.netty.transport.writeTaskSizeOverhead", 48);
 
         private final Recycler.Handle<AbstractWriteTask> handle;
         private AbstractChannelHandlerContext ctx;

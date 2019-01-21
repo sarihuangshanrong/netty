@@ -381,14 +381,14 @@ public class ChannelInitializerTest {
                 .childHandler(new ChannelInitializer<LocalChannel>() {
                     @Override
                     protected void initChannel(LocalChannel ch) {
-                        ch.pipeline().addLast(executor, new ChannelInitializer<Channel>() {
+                        ch.pipeline().addLast("handler", new EventExecutorHandler(executor,
+                                new ChannelInitializer<Channel>() {
                             @Override
                             protected void initChannel(Channel ch) {
                                 invokeCount.incrementAndGet();
-                                ChannelHandlerContext ctx = ch.pipeline().context(this);
-                                assertNotNull(ctx);
-                                ch.pipeline().addAfter(ctx.executor(),
-                                        ctx.name(), null, new ChannelInboundHandlerAdapter() {
+                                ch.pipeline().addAfter(
+                                        "handler", null, new EventExecutorHandler(executor,
+                                                new ChannelInboundHandlerAdapter() {
                                             @Override
                                             public void channelRead(ChannelHandlerContext ctx, Object msg)  {
                                                 // just drop on the floor.
@@ -398,7 +398,7 @@ public class ChannelInitializerTest {
                                             public void handlerRemoved(ChannelHandlerContext ctx) {
                                                 latch.countDown();
                                             }
-                                        });
+                                        }));
                                 completeCount.incrementAndGet();
                             }
 
@@ -408,7 +408,7 @@ public class ChannelInitializerTest {
                                     errorRef.set(cause);
                                 }
                             }
-                        });
+                        }));
                     }
                 });
 

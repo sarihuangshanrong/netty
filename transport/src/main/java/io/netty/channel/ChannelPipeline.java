@@ -204,8 +204,8 @@ import java.util.NoSuchElementException;
  * // in a different thread than an I/O thread so that the I/O thread is not blocked by
  * // a time-consuming task.
  * // If your business logic is fully asynchronous or finished very quickly, you don't
- * // need to specify a group.
- * pipeline.addLast(group.next(), "handler", new MyBusinessLogicHandler());
+ * // need to use the {@link EventExecutorHandler} at all.
+ * pipeline.addLast(group, "handler", new {@link EventExecutorHandler}(group.next(), new MyBusinessLogicHandler());
  * </pre>
  *
  * <h3>Thread safety</h3>

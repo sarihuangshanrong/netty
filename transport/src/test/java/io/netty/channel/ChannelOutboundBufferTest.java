@@ -402,7 +402,7 @@ public class ChannelOutboundBufferTest {
         final CountDownLatch handlerAddedLatch = new CountDownLatch(1);
         final CountDownLatch handlerRemovedLatch = new CountDownLatch(1);
         EmbeddedChannel ch = new EmbeddedChannel();
-        ch.pipeline().addLast(executor, "handler", new ChannelOutboundHandlerAdapter() {
+        ch.pipeline().addLast("handler", new EventExecutorHandler(executor, new ChannelOutboundHandlerAdapter() {
             @Override
             public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
                 promise.setFailure(new AssertionError("Should not be called"));
@@ -417,7 +417,7 @@ public class ChannelOutboundBufferTest {
             public void handlerRemoved(ChannelHandlerContext ctx) {
                 handlerRemovedLatch.countDown();
             }
-        });
+        }));
 
         // Lets wait until we are sure the handler was added.
         handlerAddedLatch.await();

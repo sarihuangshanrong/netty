@@ -24,6 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventExecutorHandler;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
@@ -132,13 +133,13 @@ public class SocketEchoTest extends AbstractSocketTest {
             sb.childHandler(new ChannelInitializer<Channel>() {
                 @Override
                 protected void initChannel(Channel c) throws Exception {
-                    c.pipeline().addLast(group.next(), sh);
+                    c.pipeline().addLast(new EventExecutorHandler(group.next(), sh));
                 }
             });
             cb.handler(new ChannelInitializer<Channel>() {
                 @Override
                 protected void initChannel(Channel c) throws Exception {
-                    c.pipeline().addLast(group.next(), ch);
+                    c.pipeline().addLast(new EventExecutorHandler(group.next(), ch));
                 }
             });
         } else {

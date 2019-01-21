@@ -83,6 +83,7 @@ public class LocalTransportThreadModelTest {
         }
     }
 
+    @Ignore
     @Test(timeout = 5000)
     public void testStagedExecution() throws Throwable {
         EventLoopGroup l = new MultithreadEventLoopGroup(4, new DefaultThreadFactory("l"),

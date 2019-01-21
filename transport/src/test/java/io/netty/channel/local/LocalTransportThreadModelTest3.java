@@ -23,6 +23,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventExecutorHandler;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultithreadEventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
@@ -117,13 +118,14 @@ public class LocalTransportThreadModelTest3 {
     }
 
     private static void testConcurrentAddRemove(boolean inbound) throws Exception {
+
         EventLoopGroup l = new MultithreadEventLoopGroup(4, new DefaultThreadFactory("l"),
                 LocalHandler.newFactory());
-        EventExecutorGroup e1 = new DefaultEventExecutorGroup(4, new DefaultThreadFactory("e1"));
-        EventExecutorGroup e2 = new DefaultEventExecutorGroup(4, new DefaultThreadFactory("e2"));
-        EventExecutorGroup e3 = new DefaultEventExecutorGroup(4, new DefaultThreadFactory("e3"));
-        EventExecutorGroup e4 = new DefaultEventExecutorGroup(4, new DefaultThreadFactory("e4"));
-        EventExecutorGroup e5 = new DefaultEventExecutorGroup(4, new DefaultThreadFactory("e5"));
+        EventExecutorGroup e1 = new DefaultEventExecutorGroup(1, new DefaultThreadFactory("e1"));
+        EventExecutorGroup e2 = new DefaultEventExecutorGroup(1, new DefaultThreadFactory("e2"));
+        EventExecutorGroup e3 = new DefaultEventExecutorGroup(1, new DefaultThreadFactory("e3"));
+        EventExecutorGroup e4 = new DefaultEventExecutorGroup(1, new DefaultThreadFactory("e4"));
+        EventExecutorGroup e5 = new DefaultEventExecutorGroup(1, new DefaultThreadFactory("e5"));
 
         final EventExecutorGroup[] groups = {e1, e2, e3, e4, e5};
         try {
@@ -139,12 +141,12 @@ public class LocalTransportThreadModelTest3 {
             if (!inbound) {
                 ch.config().setAutoRead(false);
             }
-            ch.pipeline().addLast(e1.next(), h1)
-                    .addLast(e1.next(), h2)
-                    .addLast(e1.next(), h3)
-                    .addLast(e1.next(), h4)
-                    .addLast(e1.next(), h5)
-                    .addLast(e1.next(), "recorder", h6);
+            ch.pipeline().addLast(new EventExecutorHandler(e1.next(), h1))
+                    .addLast(new EventExecutorHandler(e1.next(), h2))
+                    .addLast(new EventExecutorHandler(e1.next(), h3))
+                    .addLast(new EventExecutorHandler(e1.next(), h4))
+                    .addLast(new EventExecutorHandler(e1.next(), h5))
+                    .addLast("recorder", new EventExecutorHandler(e1.next(), h6));
 
             ch.register().sync().channel().connect(localAddr).sync();
 
@@ -168,8 +170,9 @@ public class LocalTransportThreadModelTest3 {
                         }
                         //EventForwardHandler forwardHandler = forwarders[random.nextInt(forwarders.length)];
                         ChannelHandler handler = ch.pipeline().removeFirst();
-                        ch.pipeline().addBefore(groups[random.nextInt(groups.length)].next(), "recorder",
-                                UUID.randomUUID().toString(), handler);
+                        ch.pipeline().addBefore("recorder",
+                                UUID.randomUUID().toString(), new EventExecutorHandler(
+                                        groups[random.nextInt(groups.length)].next(), handler));
                     }
                 }
             });
