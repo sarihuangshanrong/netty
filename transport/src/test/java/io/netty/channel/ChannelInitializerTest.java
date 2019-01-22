@@ -35,10 +35,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -121,11 +123,19 @@ public class ChannelInitializerTest {
     }
 
     @Test
-    public void testChannelInitializerInInitializerCorrectOrdering() {
-        final ChannelInboundHandlerAdapter handler1 = new ChannelInboundHandlerAdapter();
-        final ChannelInboundHandlerAdapter handler2 = new ChannelInboundHandlerAdapter();
-        final ChannelInboundHandlerAdapter handler3 = new ChannelInboundHandlerAdapter();
-        final ChannelInboundHandlerAdapter handler4 = new ChannelInboundHandlerAdapter();
+    public void testChannelInitializerInInitializerCorrectOrdering() throws InterruptedException {
+        final BlockingQueue<ChannelHandler> handlers = new LinkedBlockingDeque<>();
+
+        class Handler extends ChannelInboundHandlerAdapter {
+            @Override
+            public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+                handlers.add(this);
+            }
+        }
+        final ChannelHandler handler1 = new Handler();
+        final ChannelHandler handler2 = new Handler();
+        final ChannelHandler handler3 = new Handler();
+        final ChannelHandler handler4 = new Handler();
 
         client.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -152,12 +162,12 @@ public class ChannelInitializerTest {
                     // NOOP
                 }
             }).syncUninterruptibly();
-            Iterator<Map.Entry<String, ChannelHandler>> handlers = channel.pipeline().iterator();
-            assertSame(handler1, handlers.next().getValue());
-            assertSame(handler2, handlers.next().getValue());
-            assertSame(handler3, handlers.next().getValue());
-            assertSame(handler4, handlers.next().getValue());
-            assertFalse(handlers.hasNext());
+
+            assertSame(handler1, handlers.take());
+            assertSame(handler2, handlers.take());
+            assertSame(handler3, handlers.take());
+            assertSame(handler4, handlers.take());
+            assertTrue(handlers.isEmpty());
         } finally {
             channel.close().syncUninterruptibly();
         }

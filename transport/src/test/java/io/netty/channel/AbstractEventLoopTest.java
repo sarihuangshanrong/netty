@@ -49,19 +49,20 @@ public abstract class AbstractEventLoopTest {
                         @Override
                         public void initChannel(ServerSocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new TestChannelHandler());
-                            ch.pipeline().addLast(eventExecutorGroup.next(), new TestChannelHandler2());
+                            ch.pipeline().addLast(
+                                    new EventExecutorHandler(eventExecutorGroup.next(), new TestChannelHandler2()));
                         }
                     })
                                             .bind(0).awaitUninterruptibly();
 
-            EventExecutor executor = future.channel().pipeline().context(TestChannelHandler2.class).executor();
+            EventExecutor executor = future.channel().pipeline().context(EventExecutorHandler.class).executor();
             EventExecutor executor1 = future.channel().pipeline().context(TestChannelHandler.class).executor();
 
             future.channel().deregister().awaitUninterruptibly();
             Channel channel = future.channel().register().awaitUninterruptibly().channel();
             EventExecutor executorNew = channel.pipeline().context(TestChannelHandler.class).executor();
             assertSame(executor1, executorNew);
-            assertSame(executor, future.channel().pipeline().context(TestChannelHandler2.class).executor());
+            assertSame(executor, future.channel().pipeline().context(EventExecutorHandler.class).executor());
         } finally {
             group.shutdownGracefully();
             eventExecutorGroup.shutdownGracefully();

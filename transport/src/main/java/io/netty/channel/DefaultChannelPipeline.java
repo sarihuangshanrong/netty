@@ -28,8 +28,6 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -62,6 +60,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     final AbstractChannelHandlerContext tail;
 
     private final Channel channel;
+    private final EventExecutor executor;
     private final ChannelFuture succeededFuture;
     private final VoidChannelPromise voidPromise;
     private final boolean touch = ResourceLeakDetector.isEnabled();
@@ -69,8 +68,12 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private volatile MessageSizeEstimator.Handle estimatorHandle;
 
     protected DefaultChannelPipeline(Channel channel) {
+        this(channel, channel.eventLoop());
+    }
+    protected DefaultChannelPipeline(Channel channel, EventExecutor executor) {
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
-        succeededFuture = new SucceededChannelFuture(channel, null);
+        this.executor = executor;
+        succeededFuture = new SucceededChannelFuture(channel, executor);
         voidPromise =  new VoidChannelPromise(channel, true);
 
         tail = new TailContext(this);
@@ -95,8 +98,8 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         return touch ? ReferenceCountUtil.touch(msg, next) : msg;
     }
 
-    private AbstractChannelHandlerContext newContext(EventExecutor executor, String name, ChannelHandler handler) {
-        return new DefaultChannelHandlerContext(this, executor, name, handler);
+    private AbstractChannelHandlerContext newContext(String name, ChannelHandler handler) {
+        return new DefaultChannelHandlerContext(this, name, handler);
     }
 
     @Override
@@ -105,18 +108,18 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public final ChannelPipeline addFirst(String name, ChannelHandler handler) {
-        return addFirst(null, name, handler);
+    public final EventExecutor executor() {
+        return executor;
     }
 
     @Override
-    public final ChannelPipeline addFirst(EventExecutor executor, String name, ChannelHandler handler) {
+    public final ChannelPipeline addFirst(String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
             checkMultiplicity(handler);
             name = filterName(name, handler);
 
-            newCtx = newContext(executor, name, handler);
+            newCtx = newContext(name, handler);
 
             addFirst0(newCtx);
 
@@ -146,16 +149,11 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline addLast(String name, ChannelHandler handler) {
-        return addLast(null, name, handler);
-    }
-
-    @Override
-    public final ChannelPipeline addLast(EventExecutor executor, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
             checkMultiplicity(handler);
 
-            newCtx = newContext(executor, filterName(name, handler), handler);
+            newCtx = newContext(filterName(name, handler), handler);
 
             addLast0(newCtx);
 
@@ -185,12 +183,6 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline addBefore(String baseName, String name, ChannelHandler handler) {
-        return addBefore(null, baseName, name, handler);
-    }
-
-    @Override
-    public final ChannelPipeline addBefore(
-            EventExecutor executor, String baseName, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         final AbstractChannelHandlerContext ctx;
         synchronized (this) {
@@ -198,7 +190,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             name = filterName(name, handler);
             ctx = getContextOrDie(baseName);
 
-            newCtx = newContext(executor, name, handler);
+            newCtx = newContext(name, handler);
 
             addBefore0(ctx, newCtx);
 
@@ -235,12 +227,6 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline addAfter(String baseName, String name, ChannelHandler handler) {
-        return addAfter(null, baseName, name, handler);
-    }
-
-    @Override
-    public final ChannelPipeline addAfter(
-            EventExecutor executor, String baseName, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         final AbstractChannelHandlerContext ctx;
 
@@ -249,7 +235,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             name = filterName(name, handler);
             ctx = getContextOrDie(baseName);
 
-            newCtx = newContext(executor, name, handler);
+            newCtx = newContext(name, handler);
 
             addAfter0(ctx, newCtx);
 
@@ -282,11 +268,6 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline addFirst(ChannelHandler... handlers) {
-        return addFirst(null, handlers);
-    }
-
-    @Override
-    public final ChannelPipeline addFirst(EventExecutor executor, ChannelHandler... handlers) {
         if (handlers == null) {
             throw new NullPointerException("handlers");
         }
@@ -303,7 +284,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         for (int i = size - 1; i >= 0; i --) {
             ChannelHandler h = handlers[i];
-            addFirst(executor, null, h);
+            addFirst(null, h);
         }
 
         return this;
@@ -315,11 +296,6 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline addLast(ChannelHandler... handlers) {
-        return addLast(null, handlers);
-    }
-
-    @Override
-    public final ChannelPipeline addLast(EventExecutor executor, ChannelHandler... handlers) {
         if (handlers == null) {
             throw new NullPointerException("handlers");
         }
@@ -328,7 +304,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             if (h == null) {
                 break;
             }
-            addLast(executor, null, h);
+            addLast(null, h);
         }
 
         return this;
@@ -477,7 +453,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 }
             }
 
-            newCtx = newContext(ctx.executor, newName, newHandler);
+            newCtx = newContext(newName, newHandler);
 
             replace0(ctx, newCtx);
 
@@ -689,24 +665,6 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         }
     }
 
-    @Override
-    public final Map<String, ChannelHandler> toMap() {
-        Map<String, ChannelHandler> map = new LinkedHashMap<>();
-        AbstractChannelHandlerContext ctx = head.next;
-        for (;;) {
-            if (ctx == tail) {
-                return map;
-            }
-            map.put(ctx.name(), ctx.handler());
-            ctx = ctx.next;
-        }
-    }
-
-    @Override
-    public final Iterator<Map.Entry<String, ChannelHandler>> iterator() {
-        return toMap().entrySet().iterator();
-    }
-
     /**
      * Returns the {@link String} representation of this pipeline.
      */
@@ -740,13 +698,13 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelRegistered() {
-        AbstractChannelHandlerContext.invokeChannelRegistered(head);
+        head.invokeChannelRegistered();
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelUnregistered() {
-        AbstractChannelHandlerContext.invokeChannelUnregistered(head);
+        head.invokeChannelUnregistered();
         return this;
     }
 
@@ -822,43 +780,43 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelActive() {
-        AbstractChannelHandlerContext.invokeChannelActive(head);
+        head.invokeChannelActive();
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelInactive() {
-        AbstractChannelHandlerContext.invokeChannelInactive(head);
+        head.invokeChannelInactive();
         return this;
     }
 
     @Override
     public final ChannelPipeline fireExceptionCaught(Throwable cause) {
-        AbstractChannelHandlerContext.invokeExceptionCaught(head, cause);
+        head.invokeExceptionCaught(cause);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireUserEventTriggered(Object event) {
-        AbstractChannelHandlerContext.invokeUserEventTriggered(head, event);
+        head.invokeUserEventTriggered(event);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelRead(Object msg) {
-        AbstractChannelHandlerContext.invokeChannelRead(head, msg);
+        head.invokeChannelRead(msg);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelReadComplete() {
-        AbstractChannelHandlerContext.invokeChannelReadComplete(head);
+        head.invokeChannelReadComplete();
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelWritabilityChanged() {
-        AbstractChannelHandlerContext.invokeChannelWritabilityChanged(head);
+        head.invokeChannelWritabilityChanged();
         return this;
     }
 
@@ -967,12 +925,12 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPromise newPromise() {
-        return new DefaultChannelPromise(channel);
+        return new DefaultChannelPromise(channel, executor);
     }
 
     @Override
     public final ChannelProgressivePromise newProgressivePromise() {
-        return new DefaultChannelProgressivePromise(channel);
+        return new DefaultChannelProgressivePromise(channel, executor);
     }
 
     @Override
@@ -982,7 +940,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelFuture newFailedFuture(Throwable cause) {
-        return new FailedChannelFuture(channel, null, cause);
+        return new FailedChannelFuture(channel, executor, cause);
     }
 
     @Override
@@ -1123,7 +1081,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     final class TailContext extends AbstractChannelHandlerContext implements ChannelInboundHandler {
 
         TailContext(DefaultChannelPipeline pipeline) {
-            super(pipeline, null, TAIL_NAME, TailContext.class);
+            super(pipeline, pipeline.executor(), TAIL_NAME, TailContext.class);
             setAddComplete();
         }
 
@@ -1186,7 +1144,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         private final Unsafe unsafe;
 
         HeadContext(DefaultChannelPipeline pipeline) {
-            super(pipeline, null, HEAD_NAME, HeadContext.class);
+            super(pipeline, pipeline.channel.eventLoop(), HEAD_NAME, HeadContext.class);
             unsafe = pipeline.channel().unsafe();
             setAddComplete();
         }

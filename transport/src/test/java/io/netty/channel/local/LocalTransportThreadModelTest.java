@@ -24,6 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventExecutorHandler;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultithreadEventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
@@ -98,9 +99,9 @@ public class LocalTransportThreadModelTest {
         // With no EventExecutor specified, h1 will be always invoked by EventLoop 'l'.
         ch.pipeline().addLast(h1);
         // h2 will be always invoked by EventExecutor 'e1'.
-        ch.pipeline().addLast(e1.next(), h2);
+        ch.pipeline().addLast(new EventExecutorHandler(e1.next(), h2));
         // h3 will be always invoked by EventExecutor 'e2'.
-        ch.pipeline().addLast(e2.next(), h3);
+        ch.pipeline().addLast(new EventExecutorHandler(e2.next(), h3));
 
         ch.register().sync().channel().connect(localAddr).sync();
 
@@ -251,12 +252,11 @@ public class LocalTransportThreadModelTest {
             // inbound:  int -> byte[4] -> int -> int -> byte[4] -> int -> /dev/null
             // outbound: int -> int -> byte[4] -> int -> int -> byte[4] -> /dev/null
             ch.pipeline().addLast(h1)
-                         .addLast(e1.next(), h2)
-                         .addLast(e2.next(), h3)
-                         .addLast(e3.next(), h4)
-                         .addLast(e4.next(), h5)
-                         .addLast(e5.next(), h6);
-
+                         .addLast(new EventExecutorHandler(e1.next(), h2))
+                         .addLast(new EventExecutorHandler(e2.next(), h3))
+                         .addLast(new EventExecutorHandler(e3.next(), h4))
+                         .addLast(new EventExecutorHandler(e4.next(), h5))
+                         .addLast(new EventExecutorHandler(e5.next(), h6));
             ch.register().sync().channel().connect(localAddr).sync();
 
             final int ROUNDS = 1024;
