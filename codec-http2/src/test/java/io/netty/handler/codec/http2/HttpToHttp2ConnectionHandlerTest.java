@@ -581,7 +581,7 @@ public class HttpToHttp2ConnectionHandlerTest {
     }
 
     private ChannelHandlerContext ctx() {
-        return clientChannel.pipeline().firstContext();
+        return clientChannel.pipeline().context(Http2ConnectionHandler.class);
     }
 
     private ChannelPromise newPromise() {

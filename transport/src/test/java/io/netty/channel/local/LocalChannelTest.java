@@ -370,14 +370,14 @@ public class LocalChannelTest {
 
                 final Channel ccCpy = cc;
                 // Make sure a write operation is executed in the eventloop
-                cc.pipeline().lastContext().executor().execute(new Runnable() {
+                cc.pipeline().executor().execute(new Runnable() {
                     @Override
                     public void run() {
                         ChannelPromise promise = ccCpy.newPromise();
                         promise.addListener(new ChannelFutureListener() {
                             @Override
                             public void operationComplete(ChannelFuture future) throws Exception {
-                                ccCpy.pipeline().lastContext().close();
+                                ccCpy.pipeline().close();
                             }
                         });
                         ccCpy.writeAndFlush(data.retainedDuplicate(), promise);
@@ -501,7 +501,7 @@ public class LocalChannelTest {
 
                 final Channel ccCpy = cc;
                 // Make sure a write operation is executed in the eventloop
-                cc.pipeline().lastContext().executor().execute(new Runnable() {
+                cc.pipeline().executor().execute(new Runnable() {
                     @Override
                     public void run() {
                         ChannelPromise promise = ccCpy.newPromise();
@@ -583,7 +583,7 @@ public class LocalChannelTest {
 
             final Channel ccCpy = cc;
             // Make sure a write operation is executed in the eventloop
-            cc.pipeline().lastContext().executor().execute(new Runnable() {
+            cc.pipeline().executor().execute(new Runnable() {
                 @Override
                 public void run() {
                     ChannelPromise promise = ccCpy.newPromise();
@@ -665,7 +665,7 @@ public class LocalChannelTest {
 
                 final Channel ccCpy = cc;
                 // Make sure a write operation is executed in the eventloop
-                cc.pipeline().lastContext().executor().execute(new Runnable() {
+                cc.pipeline().executor().execute(new Runnable() {
                     @Override
                     public void run() {
                         ChannelPromise promise = ccCpy.newPromise();
@@ -747,7 +747,7 @@ public class LocalChannelTest {
                 ccCpy.closeFuture().addListener(clientChannelCloseLatch);
 
                 // Make sure a write operation is executed in the eventloop
-                cc.pipeline().lastContext().executor().execute(new Runnable() {
+                cc.pipeline().executor().execute(new Runnable() {
                     @Override
                     public void run() {
                         ccCpy.writeAndFlush(data.retainedDuplicate(), ccCpy.newPromise())

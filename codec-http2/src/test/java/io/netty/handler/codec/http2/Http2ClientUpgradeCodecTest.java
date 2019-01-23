@@ -52,8 +52,9 @@ public class Http2ClientUpgradeCodecTest {
     private static void testUpgrade(Http2ConnectionHandler handler) throws Exception {
         FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.OPTIONS, "*");
 
-        EmbeddedChannel channel = new EmbeddedChannel(new ChannelInboundHandlerAdapter());
-        ChannelHandlerContext ctx = channel.pipeline().firstContext();
+        ChannelHandler dummyHandler = new ChannelInboundHandlerAdapter();
+        EmbeddedChannel channel = new EmbeddedChannel(dummyHandler);
+        ChannelHandlerContext ctx = channel.pipeline().context(dummyHandler);
         Http2ClientUpgradeCodec codec = new Http2ClientUpgradeCodec("connectionHandler", handler);
         codec.setUpgradeHeaders(ctx, request);
         // Flush the channel to ensure we write out all buffered data

@@ -206,7 +206,10 @@ public class PendingWriteQueueTest {
     @Test
     public void testRemoveAndFailAllReentrantFailAll() {
         EmbeddedChannel channel = newChannel();
-        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().firstContext());
+
+        ChannelHandler handler = new ChannelInboundHandlerAdapter();
+        channel.pipeline().addFirst(handler);
+        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().context(handler));
 
         ChannelPromise promise = channel.newPromise();
         promise.addListener(new ChannelFutureListener() {
@@ -237,7 +240,9 @@ public class PendingWriteQueueTest {
             }
         }, new ChannelOutboundHandlerAdapter());
 
-        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().lastContext());
+        ChannelHandler handler = new ChannelInboundHandlerAdapter();
+        channel.pipeline().addLast(handler);
+        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().context(handler));
 
         ChannelPromise promise = channel.newPromise();
         final ChannelPromise promise3 = channel.newPromise();
@@ -274,7 +279,9 @@ public class PendingWriteQueueTest {
             }
         }, new ChannelOutboundHandlerAdapter());
 
-        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().lastContext());
+        ChannelHandler handler = new ChannelInboundHandlerAdapter();
+        channel.pipeline().addLast(handler);
+        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().context(handler));
 
         ChannelPromise promise = channel.newPromise();
         queue.add(1L, promise);
@@ -292,7 +299,10 @@ public class PendingWriteQueueTest {
     public void testRemoveAndFailAllReentrantWrite() {
         final List<Integer> failOrder = Collections.synchronizedList(new ArrayList<>());
         EmbeddedChannel channel = newChannel();
-        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().firstContext());
+
+        ChannelHandler handler = new ChannelInboundHandlerAdapter();
+        channel.pipeline().addFirst(handler);
+        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().context(handler));
 
         ChannelPromise promise = channel.newPromise();
         final ChannelPromise promise3 = channel.newPromise();
@@ -335,7 +345,9 @@ public class PendingWriteQueueTest {
     @Test
     public void testRemoveAndWriteAllReentrance() {
         EmbeddedChannel channel = newChannel();
-        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().firstContext());
+        ChannelHandler handler = new ChannelInboundHandlerAdapter();
+        channel.pipeline().addFirst(handler);
+        final PendingWriteQueue queue = new PendingWriteQueue(channel.pipeline().context(handler));
 
         ChannelPromise promise = channel.newPromise();
         promise.addListener(new ChannelFutureListener() {
@@ -364,7 +376,9 @@ public class PendingWriteQueueTest {
     @Test
     public void testCloseChannelOnCreation() {
         EmbeddedChannel channel = newChannel();
-        ChannelHandlerContext context = channel.pipeline().firstContext();
+        ChannelHandler handler = new ChannelInboundHandlerAdapter();
+        channel.pipeline().addFirst(handler);
+        ChannelHandlerContext context = channel.pipeline().context(handler);
         channel.close().syncUninterruptibly();
 
         final PendingWriteQueue queue = new PendingWriteQueue(context);

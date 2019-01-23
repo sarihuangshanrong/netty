@@ -1248,11 +1248,11 @@ public class Http2ConnectionRoundtripTest {
     }
 
     private ChannelHandlerContext ctx() {
-        return clientChannel.pipeline().firstContext();
+        return clientChannel.pipeline().context(Http2ConnectionHandler.class);
     }
 
     private ChannelHandlerContext serverCtx() {
-        return serverConnectedChannel.pipeline().firstContext();
+        return serverConnectedChannel.pipeline().context(Http2ConnectionHandler.class);
     }
 
     private ChannelPromise newPromise() {

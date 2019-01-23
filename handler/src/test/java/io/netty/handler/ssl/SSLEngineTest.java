@@ -1682,7 +1682,7 @@ public abstract class SSLEngineTest {
                         if (evt instanceof SslHandshakeCompletionEvent) {
                             Throwable cause = ((SslHandshakeCompletionEvent) evt).cause();
                             if (cause == null) {
-                                SSLSession session = ((SslHandler) ctx.pipeline().first()).engine().getSession();
+                                SSLSession session = ctx.pipeline().get(SslHandler.class).engine().getSession();
                                 X509Certificate[] peerCertificateChain = session.getPeerCertificateChain();
                                 Certificate[] peerCertificates = session.getPeerCertificates();
                                 if (peerCertificateChain == null) {

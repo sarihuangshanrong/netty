@@ -374,7 +374,7 @@ public class DataCompressionHttp2Test {
     }
 
     private ChannelHandlerContext ctxClient() {
-        return clientChannel.pipeline().firstContext();
+        return clientChannel.pipeline().context(Http2ConnectionHandler.class);
     }
 
     private ChannelPromise newPromiseClient() {

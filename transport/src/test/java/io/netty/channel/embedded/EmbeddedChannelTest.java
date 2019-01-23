@@ -107,8 +107,6 @@ public class EmbeddedChannelTest {
                 ch.pipeline().addLast(handler);
             }
         });
-        ChannelPipeline pipeline = channel.pipeline();
-        assertSame(handler, pipeline.firstContext().handler());
         assertTrue(channel.writeInbound(3));
         assertTrue(channel.finish());
         assertSame(first, channel.readInbound());

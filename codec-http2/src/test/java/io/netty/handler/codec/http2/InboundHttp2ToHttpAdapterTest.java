@@ -782,7 +782,7 @@ public class InboundHttp2ToHttpAdapterTest {
     }
 
     private ChannelHandlerContext ctxClient() {
-        return clientChannel.pipeline().firstContext();
+        return clientChannel.pipeline().context(Http2ConnectionHandler.class);
     }
 
     private ChannelPromise newPromiseClient() {
@@ -790,7 +790,7 @@ public class InboundHttp2ToHttpAdapterTest {
     }
 
     private ChannelHandlerContext ctxServer() {
-        return serverConnectedChannel.pipeline().firstContext();
+        return serverConnectedChannel.pipeline().context(Http2ConnectionHandler.class);
     }
 
     private ChannelPromise newPromiseServer() {

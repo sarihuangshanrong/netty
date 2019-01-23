@@ -59,6 +59,7 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
      * {@link ChannelHandler#handlerAdded(ChannelHandlerContext)} was called.
      */
     private static final int ADD_COMPLETE = 2;
+
     /**
      * {@link ChannelHandler#handlerRemoved(ChannelHandlerContext)} was called.
      */
@@ -262,7 +263,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeChannelRegistered();
         } else {
-            executor.execute(this::findAndInvokeChannelRegistered);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeChannelRegistered();
+                }
+            });
         }
         return this;
     }
@@ -289,7 +295,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeChannelUnregistered();
         } else {
-            executor.execute(this::findAndInvokeChannelUnregistered);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeChannelUnregistered();
+                }
+            });
         }
         return this;
     }
@@ -316,7 +327,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeChannelActive();
         } else {
-            executor.execute(this::findAndInvokeChannelActive);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeChannelActive();
+                }
+            });
         }
         return this;
     }
@@ -343,7 +359,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeChannelInactive();
         } else {
-            executor.execute(this::findAndInvokeChannelInactive);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeChannelInactive();
+                }
+            });
         }
         return this;
     }
@@ -372,7 +393,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
             findAndInvokeExceptionCaught(cause);
         } else {
             try {
-                executor.execute(() -> findAndInvokeExceptionCaught(cause));
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        findAndInvokeExceptionCaught(cause);
+                    }
+                });
             } catch (Throwable t) {
                 if (logger.isWarnEnabled()) {
                     logger.warn("Failed to submit an exceptionCaught() event.", t);
@@ -417,7 +443,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeUserEventTriggered(event);
         } else {
-            executor.execute(() -> findAndInvokeUserEventTriggered(event));
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeUserEventTriggered(event);
+                }
+            });
         }
         return this;
     }
@@ -445,7 +476,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeChannelRead(msg);
         } else {
-            executor.execute(() -> findAndInvokeChannelRead(msg));
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeChannelRead(msg);
+                }
+            });
         }
         return this;
     }
@@ -473,7 +509,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeChannelReadComplete();
         } else {
-            executor.execute(this::findAndInvokeChannelReadComplete);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeChannelReadComplete();
+                }
+            });
         }
         return this;
     }
@@ -500,7 +541,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeChannelWritabilityChanged();
         } else {
-            executor.execute(this::findAndInvokeChannelWritabilityChanged);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeChannelWritabilityChanged();
+                }
+            });
         }
         return this;
     }
@@ -570,7 +616,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeBind(localAddress, promise);
         } else {
-            safeExecute(executor, () -> findAndInvokeBind(localAddress, promise), promise, null);
+            safeExecute(executor, new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeBind(localAddress, promise);
+                }
+            }, promise, null);
         }
         return promise;
     }
@@ -612,7 +663,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeConnect(remoteAddress, localAddress, promise);
         } else {
-            safeExecute(executor, () -> findAndInvokeConnect(remoteAddress, localAddress, promise), promise, null);
+            safeExecute(executor, new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeConnect(remoteAddress, localAddress, promise);
+                }
+            }, promise, null);
         }
         return promise;
     }
@@ -650,13 +706,16 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
                 findAndInvokeDisconnect(promise);
             }
         } else {
-            safeExecute(executor, () -> {
-                // Translate disconnect to close if the channel has no notion of disconnect-reconnect.
-                // So far, UDP/IP is the only transport that has such behavior.
-                if (!channel().metadata().hasDisconnect()) {
-                    findAndInvokeClose(promise);
-                } else {
-                    findAndInvokeDisconnect(promise);
+            safeExecute(executor, new Runnable() {
+                @Override
+                public void run() {
+                    // Translate disconnect to close if the channel has no notion of disconnect-reconnect.
+                    // So far, UDP/IP is the only transport that has such behavior.
+                    if (!channel().metadata().hasDisconnect()) {
+                        findAndInvokeClose(promise);
+                    } else {
+                        findAndInvokeDisconnect(promise);
+                    }
                 }
             }, promise, null);
         }
@@ -690,7 +749,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeClose(promise);
         } else {
-            executor.execute(() -> findAndInvokeClose(promise));
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeClose(promise);
+                }
+            });
         }
         return promise;
     }
@@ -722,7 +786,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeRegister(promise);
         } else {
-            safeExecute(executor, () -> findAndInvokeRegister(promise), promise, null);
+            safeExecute(executor, new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeRegister(promise);
+                }
+            }, promise, null);
         }
         return promise;
     }
@@ -754,7 +823,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeDeregister(promise);
         } else {
-            safeExecute(executor, () -> findAndInvokeDeregister(promise), promise, null);
+            safeExecute(executor, new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeDeregister(promise);
+                }
+            }, promise, null);
         }
         return promise;
     }
@@ -781,7 +855,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeRead();
         } else {
-            executor.execute(this::findAndInvokeRead);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeRead();
+                }
+            });
         }
         return this;
     }
@@ -837,7 +916,12 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         if (executor.inEventLoop()) {
             findAndInvokeFlush();
         } else {
-            safeExecute(executor, this::findAndInvokeFlush, channel().voidPromise(), null);
+            safeExecute(executor, new Runnable() {
+                @Override
+                public void run() {
+                    findAndInvokeFlush();
+                }
+            }, channel().voidPromise(), null);
         }
 
         return this;

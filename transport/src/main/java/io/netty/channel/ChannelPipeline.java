@@ -24,8 +24,6 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 
@@ -335,26 +333,6 @@ public interface ChannelPipeline
     <T extends ChannelHandler> T remove(Class<T> handlerType);
 
     /**
-     * Removes the first {@link ChannelHandler} in this pipeline.
-     *
-     * @return the removed handler
-     *
-     * @throws NoSuchElementException
-     *         if this pipeline is empty
-     */
-    ChannelHandler removeFirst();
-
-    /**
-     * Removes the last {@link ChannelHandler} in this pipeline.
-     *
-     * @return the removed handler
-     *
-     * @throws NoSuchElementException
-     *         if this pipeline is empty
-     */
-    ChannelHandler removeLast();
-
-    /**
      * Replaces the specified {@link ChannelHandler} with a new handler in this pipeline.
      *
      * @param  oldHandler    the {@link ChannelHandler} to be replaced
@@ -415,34 +393,6 @@ public interface ChannelPipeline
      */
     <T extends ChannelHandler> T replace(Class<T> oldHandlerType, String newName,
                                          ChannelHandler newHandler);
-
-    /**
-     * Returns the first {@link ChannelHandler} in this pipeline.
-     *
-     * @return the first handler.  {@code null} if this pipeline is empty.
-     */
-    ChannelHandler first();
-
-    /**
-     * Returns the context of the first {@link ChannelHandler} in this pipeline.
-     *
-     * @return the context of the first handler.  {@code null} if this pipeline is empty.
-     */
-    ChannelHandlerContext firstContext();
-
-    /**
-     * Returns the last {@link ChannelHandler} in this pipeline.
-     *
-     * @return the last handler.  {@code null} if this pipeline is empty.
-     */
-    ChannelHandler last();
-
-    /**
-     * Returns the context of the last {@link ChannelHandler} in this pipeline.
-     *
-     * @return the context of the last handler.  {@code null} if this pipeline is empty.
-     */
-    ChannelHandlerContext lastContext();
 
     /**
      * Returns the {@link ChannelHandler} with the specified name in this

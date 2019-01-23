@@ -57,8 +57,9 @@ public class Http2ServerUpgradeCodecTest {
         request.headers().set(HttpHeaderNames.UPGRADE, "h2c");
         request.headers().set("HTTP2-Settings", "AAMAAABkAAQAAP__");
 
-        EmbeddedChannel channel = new EmbeddedChannel(new ChannelInboundHandlerAdapter());
-        ChannelHandlerContext ctx = channel.pipeline().firstContext();
+        ChannelHandler dummyHandler = new ChannelInboundHandlerAdapter();
+        EmbeddedChannel channel = new EmbeddedChannel(dummyHandler);
+        ChannelHandlerContext ctx = channel.pipeline().context(dummyHandler);
         Http2ServerUpgradeCodec codec = new Http2ServerUpgradeCodec("connectionHandler", handler);
         assertTrue(codec.prepareUpgradeResponse(ctx, request, new DefaultHttpHeaders()));
         codec.upgradeTo(ctx, request);
