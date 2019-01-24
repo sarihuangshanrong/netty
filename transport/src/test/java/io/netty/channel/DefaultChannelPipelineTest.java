@@ -1821,13 +1821,22 @@ public class DefaultChannelPipelineTest {
     }
 
     private static void verifyContextNumber(ChannelPipeline pipeline, ChannelHandler first, int expectedNumber) {
-        AbstractChannelHandlerContext ctx = (AbstractChannelHandlerContext) pipeline.context(first);
-        int handlerNumber = 0;
-        while (ctx != ((DefaultChannelPipeline) pipeline).tail) {
-            handlerNumber++;
-            ctx = ctx.next;
-        }
-        assertEquals(expectedNumber, handlerNumber);
+        assertEquals(expectedNumber, pipeline.names().size());
+        // We schedule it on the EventLoop as the verification we are doing here depends on some internals of the
+        // DefaultChannelPipeline which will only link the nodes in the EventLoop.
+        pipeline.executor().submit(new Runnable() {
+            @Override
+            public void run() {
+                AbstractChannelHandlerContext ctx = (AbstractChannelHandlerContext) pipeline.context(first);
+                int handlerNumber = 0;
+                while (ctx != ((DefaultChannelPipeline) pipeline).tail) {
+                    handlerNumber++;
+                    ctx = ctx.next;
+                }
+                assertEquals(expectedNumber, handlerNumber);
+            }
+        }).syncUninterruptibly();
+
     }
 
     private static ChannelHandler[] newHandlers(int num) {

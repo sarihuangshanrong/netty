@@ -24,6 +24,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 
@@ -213,7 +214,7 @@ import java.util.NoSuchElementException;
  * after the exchange.
  */
 public interface ChannelPipeline
-        extends ChannelInboundInvoker, ChannelOutboundInvoker {
+        extends ChannelInboundInvoker, ChannelOutboundInvoker, Iterable<Map.Entry<String, ChannelHandler>> {
 
     /**
      * Inserts a {@link ChannelHandler} at the first position of this pipeline.
@@ -333,6 +334,26 @@ public interface ChannelPipeline
     <T extends ChannelHandler> T remove(Class<T> handlerType);
 
     /**
+     * Removes the first {@link ChannelHandler} in this pipeline.
+     *
+     * @return the removed handler
+     *
+     * @throws NoSuchElementException
+     *         if this pipeline is empty
+     */
+    ChannelHandler removeFirst();
+
+    /**
+     * Removes the last {@link ChannelHandler} in this pipeline.
+     *
+     * @return the removed handler
+     *
+     * @throws NoSuchElementException
+     *         if this pipeline is empty
+     */
+    ChannelHandler removeLast();
+
+    /**
      * Replaces the specified {@link ChannelHandler} with a new handler in this pipeline.
      *
      * @param  oldHandler    the {@link ChannelHandler} to be replaced
@@ -395,6 +416,34 @@ public interface ChannelPipeline
                                          ChannelHandler newHandler);
 
     /**
+     * Returns the first {@link ChannelHandler} in this pipeline.
+     *
+     * @return the first handler.  {@code null} if this pipeline is empty.
+     */
+    ChannelHandler first();
+
+    /**
+     * Returns the context of the first {@link ChannelHandler} in this pipeline.
+     *
+     * @return the context of the first handler.  {@code null} if this pipeline is empty.
+     */
+    ChannelHandlerContext firstContext();
+
+    /**
+     * Returns the last {@link ChannelHandler} in this pipeline.
+     *
+     * @return the last handler.  {@code null} if this pipeline is empty.
+     */
+    ChannelHandler last();
+
+    /**
+     * Returns the context of the last {@link ChannelHandler} in this pipeline.
+     *
+     * @return the context of the last handler.  {@code null} if this pipeline is empty.
+     */
+    ChannelHandlerContext lastContext();
+
+    /**
      * Returns the {@link ChannelHandler} with the specified name in this
      * pipeline.
      *
@@ -450,6 +499,12 @@ public interface ChannelPipeline
      * Returns the {@link List} of the handler names.
      */
     List<String> names();
+
+    /**
+     * Converts this pipeline into an ordered {@link Map} whose keys are
+     * handler names and whose values are handlers.
+     */
+    Map<String, ChannelHandler> toMap();
 
     @Override
     ChannelPipeline fireChannelRegistered();
